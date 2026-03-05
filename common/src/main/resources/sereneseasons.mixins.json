@@ -10,9 +10,11 @@
     "MixinServerLevel"
   ],
   "client": [
+    "client.AccessorTextureAtlas",
     "client.MixinBiomeClient",
-    "client.MixinSelectItemModelProperties",
     "client.MixinRangeSelectItemModelProperties",
+    "client.MixinSelectItemModelProperties",
+    "client.MixinSpriteContents",
     "client.MixinWeatherEffectRenderer"
   ],
   "injectors": {
