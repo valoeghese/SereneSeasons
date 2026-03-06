@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "persistent=true": {
+      "model": "minecraft:block/cherry_leaves"
+    },
+    "persistent=false": {
+      "model": "sereneseasons:block/cherry_leaves_natural"
+    }
+  }
+}

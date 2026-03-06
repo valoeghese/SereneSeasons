@@ -25,6 +25,7 @@ import net.minecraft.world.level.FoliageColor;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.LeavesBlock;
 import net.minecraft.world.level.block.state.BlockState;
 import sereneseasons.api.SSItems;
 import sereneseasons.api.season.ISeasonColorProvider;
@@ -194,6 +195,9 @@ public class ModClient
             Level level = Minecraft.getInstance().player.level();
             ResourceKey<Level> dimension = Minecraft.getInstance().player.level().dimension();
             int colour = 0xFFFFFF;
+            if (state.getValue(LeavesBlock.PERSISTENT)) {
+                return colour;
+            }
 
             if (level != null && pos != null && ModConfig.seasons.isDimensionWhitelisted(dimension))
             {

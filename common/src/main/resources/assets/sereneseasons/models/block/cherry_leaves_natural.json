@@ -1,0 +1,6 @@
+{
+  "parent": "minecraft:block/leaves",
+  "textures": {
+    "all": "sereneseasons:block/cherry_leaves_natural"
+  }
+}

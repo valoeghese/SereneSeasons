@@ -72,6 +72,7 @@ public class SeasonHandlerClient
 
     private static void updateSeasonTextures(SeasonTime calendar) {
         TextureAtlas blockAtlas = Minecraft.getInstance().getAtlasManager().getAtlasOrThrow(AtlasIds.BLOCKS);
+        TextureAtlasSprite spriteCherryNatural = blockAtlas.getSprite(Identifier.parse("sereneseasons:block/cherry_leaves_natural"));
         TextureAtlasSprite spriteCherry = blockAtlas.getSprite(Identifier.parse("minecraft:block/cherry_leaves"));
         TextureAtlasSprite spriteOak = blockAtlas.getSprite(Identifier.parse("minecraft:block/oak_leaves"));
         TextureAtlasSprite spriteCherryEarly = blockAtlas.getSprite(Identifier.parse("sereneseasons:block/cherry_leaves_early_spring"));
@@ -106,15 +107,9 @@ public class SeasonHandlerClient
         ByteBuffer nonAnimatedByteBuffer = MemoryUtil.memAlloc(notAnimated.size() * stride);
 
         // Dest Prepare
-        int cId = notAnimated.getInt(spriteCherry);
-        int oId = notAnimated.getInt(spriteOak);
+        int cId = notAnimated.getInt(spriteCherryNatural);
         if (cId != -1) {
-            System.out.println("Uploading sprite ubo for cherry at " +cId);
-            spriteCherry.uploadSpriteUbo(nonAnimatedByteBuffer, cId * stride, mipCount - 1, accessorBlockAtlas.getWidth(), accessorBlockAtlas.getHeight(), alignedUBOSize);
-        }
-        // probably not necessary for src but
-        if (oId != -1) {
-            spriteOak.uploadSpriteUbo(nonAnimatedByteBuffer, oId * stride, mipCount - 1, accessorBlockAtlas.getWidth(), accessorBlockAtlas.getHeight(), alignedUBOSize);
+            spriteCherryNatural.uploadSpriteUbo(nonAnimatedByteBuffer, cId * stride, mipCount - 1, accessorBlockAtlas.getWidth(), accessorBlockAtlas.getHeight(), alignedUBOSize);
         }
 
         // Draw
@@ -140,17 +135,16 @@ public class SeasonHandlerClient
                     renderpass.setPipeline(RenderPipelines.ANIMATE_SPRITE_BLIT);
 
                     // get slice
-                    int index = notAnimated.getInt(spriteCherry);
+                    int index = notAnimated.getInt(spriteCherryNatural);
                     GpuBufferSlice cherryDest;
                     if (index == -1) {
-                        ExtendedSpriteContents contentsDest = (ExtendedSpriteContents) spriteCherry.contents();
+                        ExtendedSpriteContents contentsDest = (ExtendedSpriteContents) spriteCherryNatural.contents();
                         cherryDest = contentsDest.sereneseasons$getAnimatedGpubufferSlices()[mip];
                     } else {
                         cherryDest = nonAnimatedBuffer.slice(index * stride + mip * alignedUBOSize, SpriteContents.UBO_SIZE);
                     }
 
                     if (calendar.getSeason() == Season.SPRING) {
-                        System.out.println("Setting texture to CHERRY");
                         if (calendar.getSubSeason() == Season.SubSeason.EARLY_SPRING) {
                             drawTexture(cherryDest, gpusampler, renderpass, mip, cherryEarlySrc);
                         } else if (calendar.getSubSeason() == Season.SubSeason.MID_SPRING) {
@@ -158,21 +152,8 @@ public class SeasonHandlerClient
                         } else {
                             drawTexture(cherryDest, gpusampler, renderpass, mip, cherryLateSrc);
                         }
-
-                        // Render
-//                        renderpass.bindTexture("Sprite", cherrySrc[mip], gpusampler);
-//                        renderpass.setUniform("SpriteAnimationInfo", cherryDest);
-//                        // param 0: progress towards next frame in blending textures
-//                        renderpass.draw(0, 6);
                     } else {
-                        System.out.println("Setting texture to OAK");
                         drawTexture(cherryDest, gpusampler, renderpass, mip, oakSrc);
-
-                        // Render
-//                        renderpass.bindTexture("Sprite", oakSrc[mip], gpusampler);
-//                        renderpass.setUniform("SpriteAnimationInfo", cherryDest);
-//                        // param 0: progress towards next frame in blending textures
-//                        renderpass.draw(0, 6);
                     }
                 }
             }
