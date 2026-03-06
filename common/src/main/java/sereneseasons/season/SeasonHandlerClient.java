@@ -6,6 +6,7 @@ package sereneseasons.season;
 
 import com.mojang.blaze3d.buffers.GpuBuffer;
 import com.mojang.blaze3d.buffers.GpuBufferSlice;
+import com.mojang.blaze3d.systems.GpuDevice;
 import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.*;
@@ -29,6 +30,7 @@ import sereneseasons.init.ModConfig;
 import sereneseasons.mixin.client.AccessorTextureAtlas;
 
 import java.nio.ByteBuffer;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -70,12 +72,11 @@ public class SeasonHandlerClient
 
     private static void updateSeasonTextures(SeasonTime calendar) {
         TextureAtlas blockAtlas = Minecraft.getInstance().getAtlasManager().getAtlasOrThrow(AtlasIds.BLOCKS);
-        TextureAtlasSprite spriteCherry = blockAtlas.getSprite(Identifier.parse("minecraft:cherry_leaves"));
-        TextureAtlasSprite spriteOak = blockAtlas.getSprite(Identifier.parse("minecraft:oak_leaves"));
+        TextureAtlasSprite spriteCherry = blockAtlas.getSprite(Identifier.parse("minecraft:block/cherry_leaves"));
+        TextureAtlasSprite spriteOak = blockAtlas.getSprite(Identifier.parse("minecraft:block/oak_leaves"));
 
         AccessorTextureAtlas accessorBlockAtlas = (AccessorTextureAtlas) blockAtlas;
         final int mipCount = accessorBlockAtlas.getMipLevelCount();
-//        final GpuBufferSlice gpuBuffer = accessorBlockAtlas.getSpriteUbos();
 
         Object2IntOpenHashMap<TextureAtlasSprite> notAnimated = new Object2IntOpenHashMap<>();
         notAnimated.defaultReturnValue(-1);
@@ -83,6 +84,16 @@ public class SeasonHandlerClient
         List<TextureAtlasSprite> notAnimatedList = accessorBlockAtlas.getSprites().stream().filter(p_460298_ -> !p_460298_.contents().isAnimated()).toList();
         for (int i = 0; i < notAnimatedList.size(); i++) {
             notAnimated.put(notAnimatedList.get(i), i);
+
+            if (notAnimatedList.get(i) == spriteCherry) {
+                System.out.println("Cherry is " + i);
+            }
+            if (notAnimatedList.get(i) == spriteOak) {
+                System.out.println("Oak is" + i);
+            }
+            if (notAnimatedList.get(i) == blockAtlas.missingSprite()) {
+                System.out.println("Missing is " + i);
+            }
         }
 
         int alignedUBOSize = Mth.roundToward(SpriteContents.UBO_SIZE, RenderSystem.getDevice().getUniformOffsetAlignment());
@@ -131,10 +142,22 @@ public class SeasonHandlerClient
 
                     if (calendar.getSeason() == Season.SPRING) {
                         System.out.println("Setting texture to CHERRY");
-                        drawTexture(cherryDest, gpusampler, renderpass, mip, cherrySrc);
+//                        drawTexture(cherryDest, gpusampler, renderpass, mip, cherrySrc);
+
+                        // Render
+                        renderpass.bindTexture("Sprite", cherrySrc[mip], gpusampler);
+                        renderpass.setUniform("SpriteAnimationInfo", cherryDest);
+                        // param 0: progress towards next frame in blending textures
+                        renderpass.draw(0, 6);
                     } else {
                         System.out.println("Setting texture to OAK");
-                        drawTexture(cherryDest, gpusampler, renderpass, mip, oakSrc);
+//                        drawTexture(cherryDest, gpusampler, renderpass, mip, oakSrc);
+
+                        // Render
+                        renderpass.bindTexture("Sprite", oakSrc[mip], gpusampler);
+                        renderpass.setUniform("SpriteAnimationInfo", cherryDest);
+                        // param 0: progress towards next frame in blending textures
+                        renderpass.draw(0, 6);
                     }
                 }
             }
@@ -148,6 +171,10 @@ public class SeasonHandlerClient
         }
 
         MemoryUtil.memFree(nonAnimatedByteBuffer);
+
+//       try {
+//           blockAtlas.dumpContents(AtlasIds.BLOCKS, Path.of("C:\\Users\\Mekal Covic\\Downloads\\atlas.png"));
+//       } catch (Exception e) {e.printStackTrace();}
     }
 
     private static GpuTextureView[] createTextureView(TextureAtlasSprite spriteSrc, int mipCount) {
