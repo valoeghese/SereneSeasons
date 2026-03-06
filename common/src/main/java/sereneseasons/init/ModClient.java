@@ -29,6 +29,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import sereneseasons.api.SSItems;
 import sereneseasons.api.season.ISeasonColorProvider;
 import sereneseasons.api.season.ISeasonState;
+import sereneseasons.api.season.Season;
 import sereneseasons.api.season.SeasonHelper;
 import sereneseasons.core.SereneSeasons;
 import sereneseasons.season.SeasonColorHandlers;
@@ -188,5 +189,30 @@ public class ModClient
 
             return birchColor;
         }, Blocks.BIRCH_LEAVES);
+
+        event.register((BlockState state, @Nullable BlockAndTintGetter dimensionReader, @Nullable BlockPos pos, int tintIndex) -> {
+            Level level = Minecraft.getInstance().player.level();
+            ResourceKey<Level> dimension = Minecraft.getInstance().player.level().dimension();
+            int colour = 0xFFFFFF;
+
+            if (level != null && pos != null && ModConfig.seasons.isDimensionWhitelisted(dimension))
+            {
+                Holder<Biome> biome = level.getBiome(pos);
+
+                if (!biome.is(ModTags.Biomes.BLACKLISTED_BIOMES))
+                {
+                    ISeasonState calendar = SeasonHelper.getSeasonState(level);
+                    ISeasonColorProvider colorProvider = biome.is(ModTags.Biomes.TROPICAL_BIOMES) ? calendar.getTropicalSeason() : calendar.getSubSeason();
+
+                    if (calendar.getSeason() == Season.WINTER) {
+                        colour = 0xb78d5f;//0xA3794C;
+                    } else if (calendar.getSeason() != Season.SPRING) {
+                        colour = SeasonColorUtil.mixColours(colorProvider.getFoliageOverlay(), FoliageColor.FOLIAGE_DEFAULT, calendar.getSeason() == Season.AUTUMN ? 0.33F : 0.67f);
+                    }
+                }
+            }
+
+            return colour;
+        }, Blocks.CHERRY_LEAVES);
     }
 }
