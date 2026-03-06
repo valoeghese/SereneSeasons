@@ -74,6 +74,8 @@ public class SeasonHandlerClient
         TextureAtlas blockAtlas = Minecraft.getInstance().getAtlasManager().getAtlasOrThrow(AtlasIds.BLOCKS);
         TextureAtlasSprite spriteCherry = blockAtlas.getSprite(Identifier.parse("minecraft:block/cherry_leaves"));
         TextureAtlasSprite spriteOak = blockAtlas.getSprite(Identifier.parse("minecraft:block/oak_leaves"));
+        TextureAtlasSprite spriteCherryEarly = blockAtlas.getSprite(Identifier.parse("sereneseasons:block/cherry_leaves_early_spring"));
+        TextureAtlasSprite spriteCherryLate = blockAtlas.getSprite(Identifier.parse("sereneseasons:block/cherry_leaves_late_spring"));
 
         AccessorTextureAtlas accessorBlockAtlas = (AccessorTextureAtlas) blockAtlas;
         final int mipCount = accessorBlockAtlas.getMipLevelCount();
@@ -87,6 +89,9 @@ public class SeasonHandlerClient
 
             if (notAnimatedList.get(i) == spriteCherry) {
                 System.out.println("Cherry is " + i);
+            }
+            if (notAnimatedList.get(i) == spriteCherryEarly) {
+                System.out.println("Cherry Early is " + i);
             }
             if (notAnimatedList.get(i) == spriteOak) {
                 System.out.println("Oak is" + i);
@@ -115,10 +120,14 @@ public class SeasonHandlerClient
         // Draw
         GpuTextureView[] oakSrc = createTextureView(spriteOak, mipCount);
         GpuTextureView[] cherrySrc = createTextureView(spriteCherry, mipCount);
+        GpuTextureView[] cherryEarlySrc = createTextureView(spriteCherryEarly, mipCount);
+        GpuTextureView[] cherryLateSrc = createTextureView(spriteCherryLate, mipCount);
 
         List<GpuTextureView[]> viewsCreated = new ArrayList<>();
         viewsCreated.add(oakSrc);
         viewsCreated.add(cherrySrc);
+        viewsCreated.add(cherryEarlySrc);
+        viewsCreated.add(cherryLateSrc);
 
         // Render
         GpuSampler gpusampler = RenderSystem.getSamplerCache().getClampToEdge(FilterMode.NEAREST, true);
@@ -142,22 +151,28 @@ public class SeasonHandlerClient
 
                     if (calendar.getSeason() == Season.SPRING) {
                         System.out.println("Setting texture to CHERRY");
-//                        drawTexture(cherryDest, gpusampler, renderpass, mip, cherrySrc);
+                        if (calendar.getSubSeason() == Season.SubSeason.EARLY_SPRING) {
+                            drawTexture(cherryDest, gpusampler, renderpass, mip, cherryEarlySrc);
+                        } else if (calendar.getSubSeason() == Season.SubSeason.MID_SPRING) {
+                            drawTexture(cherryDest, gpusampler, renderpass, mip, cherrySrc);
+                        } else {
+                            drawTexture(cherryDest, gpusampler, renderpass, mip, cherryLateSrc);
+                        }
 
                         // Render
-                        renderpass.bindTexture("Sprite", cherrySrc[mip], gpusampler);
-                        renderpass.setUniform("SpriteAnimationInfo", cherryDest);
-                        // param 0: progress towards next frame in blending textures
-                        renderpass.draw(0, 6);
+//                        renderpass.bindTexture("Sprite", cherrySrc[mip], gpusampler);
+//                        renderpass.setUniform("SpriteAnimationInfo", cherryDest);
+//                        // param 0: progress towards next frame in blending textures
+//                        renderpass.draw(0, 6);
                     } else {
                         System.out.println("Setting texture to OAK");
-//                        drawTexture(cherryDest, gpusampler, renderpass, mip, oakSrc);
+                        drawTexture(cherryDest, gpusampler, renderpass, mip, oakSrc);
 
                         // Render
-                        renderpass.bindTexture("Sprite", oakSrc[mip], gpusampler);
-                        renderpass.setUniform("SpriteAnimationInfo", cherryDest);
-                        // param 0: progress towards next frame in blending textures
-                        renderpass.draw(0, 6);
+//                        renderpass.bindTexture("Sprite", oakSrc[mip], gpusampler);
+//                        renderpass.setUniform("SpriteAnimationInfo", cherryDest);
+//                        // param 0: progress towards next frame in blending textures
+//                        renderpass.draw(0, 6);
                     }
                 }
             }
