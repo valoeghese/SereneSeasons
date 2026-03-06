@@ -30,7 +30,7 @@ public class MixinSpriteContents implements ExtendedSpriteContents {
     }
 
     @Override
-    public GpuBufferSlice[] sereneseasons$getGpubufferSlices() {
+    public GpuBufferSlice[] sereneseasons$getAnimatedGpubufferSlices() {
         return this.sereneseasons$agpubufferslice;
     }
 

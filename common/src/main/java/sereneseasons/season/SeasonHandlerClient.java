@@ -6,7 +6,6 @@ package sereneseasons.season;
 
 import com.mojang.blaze3d.buffers.GpuBuffer;
 import com.mojang.blaze3d.buffers.GpuBufferSlice;
-import com.mojang.blaze3d.systems.GpuDevice;
 import com.mojang.blaze3d.systems.RenderPass;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.textures.*;
@@ -75,7 +74,7 @@ public class SeasonHandlerClient
         TextureAtlasSprite spriteOak = blockAtlas.getSprite(Identifier.parse("minecraft:oak_leaves"));
 
         AccessorTextureAtlas accessorBlockAtlas = (AccessorTextureAtlas) blockAtlas;
-        final int mipCount = accessorBlockAtlas.getMaxMipLevel();
+        final int mipCount = accessorBlockAtlas.getMipLevelCount();
 //        final GpuBufferSlice gpuBuffer = accessorBlockAtlas.getSpriteUbos();
 
         Object2IntOpenHashMap<TextureAtlasSprite> notAnimated = new Object2IntOpenHashMap<>();
@@ -86,8 +85,8 @@ public class SeasonHandlerClient
             notAnimated.put(notAnimatedList.get(i), i);
         }
 
-        int uboSize = Mth.roundToward(SpriteContents.UBO_SIZE, RenderSystem.getDevice().getUniformOffsetAlignment());
-        int stride = uboSize * mipCount;
+        int alignedUBOSize = Mth.roundToward(SpriteContents.UBO_SIZE, RenderSystem.getDevice().getUniformOffsetAlignment());
+        int stride = alignedUBOSize * mipCount;
         ByteBuffer nonAnimatedByteBuffer = MemoryUtil.memAlloc(notAnimated.size() * stride);
 
         // Dest Prepare
@@ -95,11 +94,11 @@ public class SeasonHandlerClient
         int oId = notAnimated.getInt(spriteOak);
         if (cId != -1) {
             System.out.println("Uploading sprite ubo for cherry at " +cId);
-            spriteCherry.uploadSpriteUbo(nonAnimatedByteBuffer, cId * stride, mipCount - 1, accessorBlockAtlas.getWidth(), accessorBlockAtlas.getHeight(), uboSize);
+            spriteCherry.uploadSpriteUbo(nonAnimatedByteBuffer, cId * stride, mipCount - 1, accessorBlockAtlas.getWidth(), accessorBlockAtlas.getHeight(), alignedUBOSize);
         }
         // probably not necessary for src but
         if (oId != -1) {
-            spriteOak.uploadSpriteUbo(nonAnimatedByteBuffer, oId * stride, mipCount - 1, accessorBlockAtlas.getWidth(), accessorBlockAtlas.getHeight(), uboSize);
+            spriteOak.uploadSpriteUbo(nonAnimatedByteBuffer, oId * stride, mipCount - 1, accessorBlockAtlas.getWidth(), accessorBlockAtlas.getHeight(), alignedUBOSize);
         }
 
         // Draw
@@ -125,17 +124,17 @@ public class SeasonHandlerClient
                     GpuBufferSlice cherryDest;
                     if (index == -1) {
                         ExtendedSpriteContents contentsDest = (ExtendedSpriteContents) spriteCherry.contents();
-                        cherryDest = contentsDest.sereneseasons$getGpubufferSlices()[mip];
+                        cherryDest = contentsDest.sereneseasons$getAnimatedGpubufferSlices()[mip];
                     } else {
-                        cherryDest = nonAnimatedBuffer.slice(index * stride + mip * uboSize, SpriteContents.UBO_SIZE);
+                        cherryDest = nonAnimatedBuffer.slice(index * stride + mip * alignedUBOSize, SpriteContents.UBO_SIZE);
                     }
 
                     if (calendar.getSeason() == Season.SPRING) {
                         System.out.println("Setting texture to CHERRY");
-                        setTexture(cherryDest, gpusampler, renderpass, mip, cherrySrc);
+                        drawTexture(cherryDest, gpusampler, renderpass, mip, cherrySrc);
                     } else {
                         System.out.println("Setting texture to OAK");
-                        setTexture(cherryDest, gpusampler, renderpass, mip, oakSrc);
+                        drawTexture(cherryDest, gpusampler, renderpass, mip, oakSrc);
                     }
                 }
             }
@@ -162,21 +161,20 @@ public class SeasonHandlerClient
                 1,
                 mipCount
         );
-        GpuTextureView[] agputextureview = new GpuTextureView[mipCount];
+        GpuTextureView[] views = new GpuTextureView[mipCount];
 
         for (int l = 0; l < mipCount; l++) {
             spriteSrc.uploadFirstFrame(gputexture, l);
             // RenderSystem.getDevice().createCommandEncoder().writeToTexture($$0, /*contentsSrc*/ this.byMipLevel[$$1], $$1, 0, 0, 0, this.width >> $$1, this.height >> $$1, 0, 0);
-            agputextureview[l] = RenderSystem.getDevice().createTextureView(gputexture);
+            views[l] = RenderSystem.getDevice().createTextureView(gputexture);
         }
 
-        return agputextureview;
+        return views;
     }
 
-    private static void setTexture(GpuBufferSlice sliceDest, GpuSampler sampler, RenderPass pass, int mip, GpuTextureView[] src) {
+    private static void drawTexture(GpuBufferSlice sliceDest, GpuSampler sampler, RenderPass pass, int mip, GpuTextureView[] src) {
         // Render
         pass.bindTexture("Sprite", src[mip], sampler);
-
         pass.setUniform("SpriteAnimationInfo", sliceDest);
         // param 0: progress towards next frame in blending textures
         pass.draw(0, 6);

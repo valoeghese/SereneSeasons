@@ -14,6 +14,7 @@ import java.util.List;
 public interface AccessorTextureAtlas {
     @Accessor GpuTextureView[] getMipViews();
     @Accessor int getMaxMipLevel();
+    @Accessor int getMipLevelCount();
     @Accessor @Nullable GpuBuffer getSpriteUbos();
     @Accessor List<TextureAtlasSprite> getSprites();
     @Accessor int getWidth();
